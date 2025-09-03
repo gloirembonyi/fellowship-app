@@ -1,0 +1,36 @@
+MANUAL NGINX FIX COMMANDS
+========================
+
+Run these commands on the live server to fix the nginx configuration:
+
+1. SSH to the server:
+   ssh -p 5645 gloire@197.243.28.38
+
+2. Update nginx configuration:
+   sudo sed -i 's/proxy_pass http:\/\/localhost:3000;/proxy_pass http:\/\/localhost:4000;/' /etc/nginx/sites-available/fellowship-app
+
+3. Test nginx configuration:
+   sudo nginx -t
+
+4. Reload nginx:
+   sudo systemctl reload nginx
+
+5. Test the application:
+   curl -I http://197.243.28.38:4000/apply
+
+ALTERNATIVE: If you prefer to edit the file manually:
+1. Edit the nginx config:
+   sudo nano /etc/nginx/sites-available/fellowship-app
+
+2. Change this line:
+   proxy_pass http://localhost:3000;
+   
+   To this:
+   proxy_pass http://localhost:4000;
+
+3. Save and exit (Ctrl+X, Y, Enter)
+
+4. Test and reload:
+   sudo nginx -t
+   sudo systemctl reload nginx
+

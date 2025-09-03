@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:/home/gloire/fellowship-app/dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("user") // "user", "admin", "super_admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Application {
+  id                   String               @id @default(uuid())
+  updatedAt            DateTime             @updatedAt
+  countryOfResidence   String
+  phone                String
+  address              String
+  workplace            String
+  position             String
+  educationLevel       String
+  otherEducation       String?
+  professionalContext  String
+  otherContext         String?
+  expectedContribution String
+  otherContribution    String?
+  projectType          String
+  projectArea          String
+  otherProjectArea     String?
+  projectSummary       String
+  projectMotivation    String
+  cvFileUrl            String?
+  status               String               @default("pending")
+  email                String               @unique
+  firstName            String
+  gender               String
+  lastName             String
+  middleName           String?
+  nationality          String
+  title                String
+  createdAt            DateTime             @default(now())
+  rejectionReason      String?
+  submittedAt          DateTime             @default(now())
+  
+  // Project Funding and Sustainability Information
+  estimatedBudget      String?
+  fundingSources       String?
+  fundingSecured       String?
+  fundingProofUrl      String?
+  fundingPlanUrl       String?
+  sustainabilityPlan   String?
+  fundingInfoRequested Boolean              @default(false)
+  fundingInfoSubmitted Boolean              @default(false)
+  fundingInfoSubmittedAt DateTime?
+  
+  additionalDocuments  AdditionalDocuments[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AdditionalDocuments {
+  id                   String      @id @default(uuid())
+  applicationId        String
+  submissionStatus     String      @default("pending")
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  achievements         String?
+  degreeCertifications String?
+  fullProjectProposal  String?
+  fundingPlan          String?
+  identityDocument     String?
+  languageProficiency  String?
+  referenceOne         String?
+  referenceTwo         String?
+  riskMitigation       String?
+  submittedAt          DateTime?
+  application          Application @relation(fields: [applicationId], references: [id])
+  
+  @@index([applicationId])
+}

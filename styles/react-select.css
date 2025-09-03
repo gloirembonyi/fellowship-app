@@ -1,0 +1,202 @@
+/* React Select Custom Styles */
+.react-select-container {
+  font-family: inherit;
+}
+
+.react-select__control {
+  border: 1px solid #d1d5db !important;
+  border-radius: 8px !important;
+  min-height: 48px !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.react-select__control:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-select__control--is-focused {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.react-select__control--is-disabled {
+  background-color: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}
+
+.react-select__value-container {
+  padding: 0 12px !important;
+  overflow: hidden !important;
+}
+
+.react-select__input-container {
+  color: inherit !important;
+}
+
+.react-select__placeholder {
+  color: #6b7280 !important;
+  font-size: 14px !important;
+}
+
+.react-select__single-value {
+  color: #111827 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.react-select__menu {
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid #e5e7eb !important;
+  margin-top: 4px !important;
+  z-index: 9999 !important;
+  background-color: #ffffff !important;
+}
+
+.react-select__option {
+  padding: 12px !important;
+  font-size: 14px !important;
+  transition: all 0.15s ease-in-out !important;
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
+
+.react-select__option:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.react-select__option--is-focused {
+  background-color: #f3f4f6 !important;
+}
+
+.react-select__option--is-selected {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: #1e40af !important;
+  font-weight: 500 !important;
+}
+
+.react-select__indicator-separator {
+  background-color: #d1d5db !important;
+}
+
+.react-select__dropdown-indicator {
+  color: #6b7280 !important;
+  padding: 8px !important;
+}
+
+.react-select__dropdown-indicator:hover {
+  color: #374151 !important;
+}
+
+.react-select__clear-indicator {
+  color: #6b7280 !important;
+  padding: 8px !important;
+}
+
+.react-select__clear-indicator:hover {
+  color: #374151 !important;
+}
+
+/* Dark mode styles */
+.dark .react-select__control {
+  background-color: #374151 !important;
+  border-color: #4b5563 !important;
+}
+
+.dark .react-select__control:hover {
+  border-color: #6b7280 !important;
+}
+
+.dark .react-select__control--is-focused {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .react-select__single-value {
+  color: #f9fafb !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.dark .react-select__placeholder {
+  color: #9ca3af !important;
+}
+
+.dark .react-select__input-container {
+  color: #f9fafb !important;
+}
+
+.dark .react-select__menu {
+  background-color: #374151 !important;
+  border-color: #4b5563 !important;
+  z-index: 9999 !important;
+}
+
+.dark .react-select__option {
+  color: #f9fafb !important;
+  background-color: #374151 !important;
+}
+
+.dark .react-select__option:hover {
+  background-color: #4b5563 !important;
+}
+
+.dark .react-select__option--is-focused {
+  background-color: #4b5563 !important;
+}
+
+.dark .react-select__option--is-selected {
+  background-color: rgba(59, 130, 246, 0.3) !important;
+  color: #93c5fd !important;
+}
+
+.dark .react-select__indicator-separator {
+  background-color: #4b5563 !important;
+}
+
+.dark .react-select__dropdown-indicator {
+  color: #9ca3af !important;
+}
+
+.dark .react-select__dropdown-indicator:hover {
+  color: #d1d5db !important;
+}
+
+.dark .react-select__clear-indicator {
+  color: #9ca3af !important;
+}
+
+.dark .react-select__clear-indicator:hover {
+  color: #d1d5db !important;
+}
+
+/* Additional fixes for dropdown visibility */
+.react-select__menu-list {
+  max-height: 200px !important;
+  overflow-y: auto !important;
+}
+
+.react-select__menu-notice {
+  color: #6b7280 !important;
+  padding: 12px !important;
+  text-align: center !important;
+}
+
+.dark .react-select__menu-notice {
+  color: #9ca3af !important;
+}
+
+/* Ensure proper contrast for all text */
+.react-select__option * {
+  color: inherit !important;
+}
+
+.dark .react-select__option * {
+  color: inherit !important;
+}
+

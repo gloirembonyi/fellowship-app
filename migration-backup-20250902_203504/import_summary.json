@@ -1,0 +1,23 @@
+{
+  "import_date": "2025-09-02T20:35:51.114981",
+  "before": {
+    "users": 2,
+    "applications": 63,
+    "additional_documents": 8
+  },
+  "imported": {
+    "users": 0,
+    "applications": 0,
+    "additional_documents": 0
+  },
+  "skipped": {
+    "users": 0,
+    "applications": 0,
+    "additional_documents": 0
+  },
+  "after": {
+    "users": 2,
+    "applications": 63,
+    "additional_documents": 8
+  }
+}
