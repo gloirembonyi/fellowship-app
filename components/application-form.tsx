@@ -210,23 +210,86 @@ function ApplicationForm({
         return;
       }
 
-      // Generate placeholder URLs for files
+      // Upload files properly instead of using placeholder URLs
       let cvFileUrl = "";
       if (formValues.cvFile && formValues.cvFile.length > 0) {
-        cvFileUrl = `https://example.com/uploads/cv-${Date.now()}.pdf`;
-        console.log("CV file detected, using placeholder URL:", cvFileUrl);
+        const cvFile = formValues.cvFile[0];
+        const cvFormData = new FormData();
+        cvFormData.append('file', cvFile);
+        cvFormData.append('documentType', 'cv');
+        
+        try {
+          const cvResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: cvFormData,
+          });
+          
+          if (cvResponse.ok) {
+            const cvResult = await cvResponse.json();
+            cvFileUrl = cvResult.fileUrl;
+            console.log("CV file uploaded successfully:", cvFileUrl);
+          } else {
+            throw new Error('Failed to upload CV file');
+          }
+        } catch (error) {
+          console.error("Error uploading CV:", error);
+          setError("Failed to upload CV file. Please try again.");
+          return;
+        }
       }
 
       let fundingProofUrl = "";
       if (formValues.fundingProof && formValues.fundingProof.length > 0) {
-        fundingProofUrl = `https://example.com/uploads/funding-proof-${Date.now()}.pdf`;
-        console.log("Funding proof file detected, using placeholder URL:", fundingProofUrl);
+        const fundingProofFile = formValues.fundingProof[0];
+        const fundingProofFormData = new FormData();
+        fundingProofFormData.append('file', fundingProofFile);
+        fundingProofFormData.append('documentType', 'funding-proof');
+        
+        try {
+          const fundingProofResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: fundingProofFormData,
+          });
+          
+          if (fundingProofResponse.ok) {
+            const fundingProofResult = await fundingProofResponse.json();
+            fundingProofUrl = fundingProofResult.fileUrl;
+            console.log("Funding proof uploaded successfully:", fundingProofUrl);
+          } else {
+            throw new Error('Failed to upload funding proof');
+          }
+        } catch (error) {
+          console.error("Error uploading funding proof:", error);
+          setError("Failed to upload funding proof file. Please try again.");
+          return;
+        }
       }
 
       let fundingPlanUrl = "";
       if (formValues.fundingPlan && formValues.fundingPlan.length > 0) {
-        fundingPlanUrl = `https://example.com/uploads/funding-plan-${Date.now()}.pdf`;
-        console.log("Funding plan file detected, using placeholder URL:", fundingPlanUrl);
+        const fundingPlanFile = formValues.fundingPlan[0];
+        const fundingPlanFormData = new FormData();
+        fundingPlanFormData.append('file', fundingPlanFile);
+        fundingPlanFormData.append('documentType', 'funding-plan');
+        
+        try {
+          const fundingPlanResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: fundingPlanFormData,
+          });
+          
+          if (fundingPlanResponse.ok) {
+            const fundingPlanResult = await fundingPlanResponse.json();
+            fundingPlanUrl = fundingPlanResult.fileUrl;
+            console.log("Funding plan uploaded successfully:", fundingPlanUrl);
+          } else {
+            throw new Error('Failed to upload funding plan');
+          }
+        } catch (error) {
+          console.error("Error uploading funding plan:", error);
+          setError("Failed to upload funding plan file. Please try again.");
+          return;
+        }
       }
 
       // Create a clean data object without the file object that can't be serialized

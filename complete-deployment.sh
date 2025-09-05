@@ -1,92 +1,82 @@
 #!/bin/bash
 
-# Script to complete the deployment on the live server
-# This script should be run on the live server
+echo "🚀 Completing fellowship-app deployment..."
 
-echo "🚀 Completing deployment on live server..."
+# Server configuration
+SERVER_IP="197.243.28.38"
+SERVER_PORT="5645"
+SERVER_USER="gloire"
+APP_DIR="/var/www/fellowship-app"
 
-# Navigate to application directory
-cd /var/www/fellowship-app
-
-echo "📁 Current directory: $(pwd)"
-
-# Move the OTP route file to the correct location
-echo "📤 Moving OTP route file..."
-sudo cp ~/otp-route.ts app/api/auth/otp/route.ts
-sudo chown www-data:www-data app/api/auth/otp/route.ts
-
-# Stop the application
-echo "⏹️ Stopping application..."
-pm2 stop fellowship-app
-
-# Update environment variables
-echo "🔧 Updating environment variables..."
-cat > .env << EOL
-# Database connection string for PostgreSQL
-DATABASE_URL="postgresql://fellowship_user:Moh@2024!@localhost:5432/fellowship_db?schema=public"
-DATABASE_URL_AUTHENTICATED="postgresql://fellowship_user:Moh@2024!@localhost:5432/fellowship_db?schema=public"
+echo "📝 Step 1: Setting up environment variables..."
+ssh -p $SERVER_PORT $SERVER_USER@$SERVER_IP "
+    cd $APP_DIR
+    cat > .env << 'EOL'
+# Database connection string for SQLite
+DATABASE_URL=\"file:./dev.db\"
+DATABASE_URL_AUTHENTICATED=\"file:./dev.db\"
 
 # App settings
-NEXT_PUBLIC_APP_NAME="Affiliates Fellowship Program"
-NEXT_PUBLIC_APP_URL="http://197.243.28.38"
+NEXT_PUBLIC_APP_NAME=\"Affiliates Fellowship Program\"
+NEXT_PUBLIC_APP_URL=\"http://197.243.28.38:4000\"
 
 # Admin credentials
-ADMIN_USERNAME="admin"
-ADMIN_PASSWORD="adminpass123"
+ADMIN_USERNAME=\"admin\"
+ADMIN_PASSWORD=\"adminpass123\"
 
 # User login credentials
-USER_EMAIL="techdev925@gmail.com"
-USER_PASSWORD="Admin@2027\$"
+USER_EMAIL=\"techdev925@gmail.com\"
+USER_PASSWORD=\"Admin@2027\$\"
 
-# Email configuration - Updated for live server
-EMAIL_HOST="mail.moh.gov.rw"
-EMAIL_PORT="587"
-EMAIL_USER="noreply"
-EMAIL_PASSWORD="Moh@2024!"
-EMAIL_FROM="MoH Affiliate Fellowship Program <noreply@moh.gov.rw>"
-EMAIL_SECURE="false"
-EMAIL_CONTACT="fellowship@moh.gov.rw"
+# Email configuration
+EMAIL_HOST=\"mail.moh.gov.rw\"
+EMAIL_PORT=\"587\"
+EMAIL_USER=\"noreply\"
+EMAIL_PASSWORD=\"Moh@2024!\"
+EMAIL_FROM=\"MoH Affiliate Fellowship Program <noreply@moh.gov.rw>\"
+EMAIL_SECURE=\"false\"
+EMAIL_CONTACT=\"fellowship@moh.gov.rw\"
 
 # JWT Secret
-JWT_SECRET="fellowship-program-jwt-secret-live-2025"
+JWT_SECRET=\"fellowship-program-jwt-secret-live-2025\"
 
 # Node Environment
-NODE_ENV="production"
+NODE_ENV=\"production\"
 EOL
+"
 
-# Install dependencies
-echo "📦 Installing dependencies..."
-npm install
+echo "🔧 Step 2: Starting application with PM2..."
+ssh -p $SERVER_PORT $SERVER_USER@$SERVER_IP "
+    cd $APP_DIR
+    echo 'Stopping any existing application...'
+    pm2 stop fellowship-app 2>/dev/null || true
+    pm2 delete fellowship-app 2>/dev/null || true
+    
+    echo 'Starting application...'
+    pm2 start ecosystem.config.js
+    
+    echo 'Checking status...'
+    pm2 status
+"
 
-# Generate Prisma client
-echo "🔧 Generating Prisma client..."
-npx prisma generate
+echo "⏳ Step 3: Waiting for application to start..."
+sleep 10
 
-# Run database migrations
-echo "🗄️ Running database migrations..."
-npx prisma migrate deploy
+echo "🧪 Step 4: Testing deployment..."
+if curl -s -o /dev/null -w "%{http_code}" "http://$SERVER_IP:4000" | grep -q "200"; then
+    echo "✅ SUCCESS! Application is live and accessible at http://$SERVER_IP:4000"
+else
+    echo "❌ Application not accessible. Checking logs..."
+    ssh -p $SERVER_PORT $SERVER_USER@$SERVER_IP "cd $APP_DIR && pm2 logs fellowship-app --lines 20"
+fi
 
-# Build the application
-echo "🏗️ Building application..."
-npm run build
-
-# Start the application
-echo "🚀 Starting application..."
-pm2 start ecosystem.config.js
-
-# Check application status
-echo "📊 Application status:"
-pm2 status
-
-echo "✅ Deployment completed successfully!"
+echo "🎉 Deployment completed!"
 echo ""
-echo "🌐 Test the application at: http://197.243.28.38/login"
-echo "📋 Check logs with: pm2 logs fellowship-app"
+echo "📋 Summary:"
+echo "✅ Environment variables configured"
+echo "✅ Application started with PM2"
+echo "✅ Running on port 4000"
 echo ""
-echo "🧪 Test the login flow:"
-echo "1. Go to http://197.243.28.38/login"
-echo "2. Enter email: techdev925@gmail.com"
-echo "3. Enter password: admin123"
-echo "4. Check for OTP email"
-echo "5. Enter OTP code"
-echo "6. Verify redirection to admin dashboard"
+echo "🌐 Access your application at: http://$SERVER_IP:4000"
+echo "🔧 Check logs: ssh -p $SERVER_PORT $SERVER_USER@$SERVER_IP 'cd $APP_DIR && pm2 logs fellowship-app'"
+echo "📊 Check status: ssh -p $SERVER_PORT $SERVER_USER@$SERVER_IP 'cd $APP_DIR && pm2 status'"

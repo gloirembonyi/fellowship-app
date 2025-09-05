@@ -107,9 +107,26 @@ export default function DocumentUploadForm({
     setUploadSuccess(prev => ({ ...prev, [documentType]: false }));
     setUploadProgress(prev => ({ ...prev, [documentType]: 0 }));
 
+    // Enhanced file validation
     const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSizeInBytes) {
-      setError("File size exceeds 10MB limit");
+      setError(`File size exceeds 10MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`);
+      setUploading(null);
+      return;
+    }
+
+    // Validate file type more strictly
+    const allowedTypes = ['.pdf', '.doc', '.docx'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    if (!allowedTypes.includes(fileExtension)) {
+      setError(`Invalid file type "${fileExtension}". Only PDF, DOC, and DOCX files are allowed.`);
+      setUploading(null);
+      return;
+    }
+
+    // Check if file is empty
+    if (file.size === 0) {
+      setError("The selected file is empty. Please choose a valid document.");
       setUploading(null);
       return;
     }
@@ -159,13 +176,14 @@ export default function DocumentUploadForm({
           } 
         }));
         
-        // Show success toast
+        // Show enhanced success toast
         const toastId = `success-${Date.now()}`;
+        const docName = documentTypes.find(d => d.type === documentType)?.name || documentType;
         setToasts(prev => [...prev, {
           id: toastId,
-          message: `${file.name} uploaded successfully!`,
+          message: `✅ ${docName} uploaded successfully! File: ${file.name}`,
           type: "success",
-          duration: 3000
+          duration: 4000
         }]);
         
         // Call the parent callback
@@ -253,6 +271,7 @@ export default function DocumentUploadForm({
 
   // View uploaded document in new tab
   const handleViewDocument = (fileUrl: string) => {
+    // Use direct static file serving for uploads
     window.open(fileUrl, "_blank");
   };
 
@@ -354,9 +373,50 @@ export default function DocumentUploadForm({
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Required Documents</h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 mb-4">
           Please upload the following documents to complete your application. Required documents are marked with an asterisk (*).
         </p>
+        
+        {/* Important Warning */}
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>Important:</strong> All required documents (*) must be uploaded before your application can be approved. 
+                Missing required documents may result in application rejection. Please ensure all files are in PDF, DOC, or DOCX format and under 10MB.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Progress Indicator */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-blue-800">Upload Progress</h3>
+              <p className="text-sm text-blue-600">
+                {documentTypes.filter(doc => doc.required && (additionalDocuments?.[doc.type] || uploadedFiles[doc.type])).length} of {documentTypes.filter(doc => doc.required).length} required documents uploaded
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold text-blue-800">
+                {Math.round((documentTypes.filter(doc => doc.required && (additionalDocuments?.[doc.type] || uploadedFiles[doc.type])).length / documentTypes.filter(doc => doc.required).length) * 100)}%
+              </div>
+              <div className="text-xs text-blue-600">Complete</div>
+            </div>
+          </div>
+          <div className="mt-2 bg-blue-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(documentTypes.filter(doc => doc.required && (additionalDocuments?.[doc.type] || uploadedFiles[doc.type])).length / documentTypes.filter(doc => doc.required).length) * 100}%` }}
+            ></div>
+          </div>
+        </div>
       </div>
 
       {/* Success Message */}
@@ -557,6 +617,29 @@ export default function DocumentUploadForm({
 
       {/* Submit Button */}
       <div className="mt-8 text-center">
+        {!allRequiredUploaded && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center">
+              <svg className="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-red-800">Missing Required Documents</p>
+                <p className="text-sm text-red-700 mt-1">
+                  You must upload all required documents (*) before submitting. Missing documents:
+                </p>
+                <ul className="text-sm text-red-700 mt-2 list-disc list-inside">
+                  {documentTypes
+                    .filter(doc => doc.required && !additionalDocuments?.[doc.type] && !uploadedFiles[doc.type])
+                    .map(doc => (
+                      <li key={doc.type}>{doc.name}</li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <button
           onClick={handleCompleteSubmission}
           disabled={!allRequiredUploaded || uploading === "complete"}
@@ -569,15 +652,26 @@ export default function DocumentUploadForm({
           {uploading === "complete" ? (
             <div className="flex items-center">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Submitting...
+              Submitting Documents...
+            </div>
+          ) : allRequiredUploaded ? (
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Submit All Documents
             </div>
           ) : (
-            "Submit All Documents"
+            "Upload Required Documents First"
           )}
         </button>
-        {!allRequiredUploaded && (
-          <p className="text-sm text-gray-500 mt-2">
-            Please upload all required documents before submitting
+        
+        {allRequiredUploaded && (
+          <p className="text-sm text-green-600 mt-2 flex items-center justify-center">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            All required documents uploaded - ready to submit!
           </p>
         )}
       </div>

@@ -316,3 +316,6 @@ echo "3. Verify all data is accessible in admin dashboard"
 echo "4. Test email functionality"
 echo ""
 echo -e "${GREEN}🚀 Your fellowship-app is now live and working on port 4000!${NC}"
+
+
+

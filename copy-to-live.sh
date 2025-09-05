@@ -38,3 +38,6 @@ echo "📁 Files are now in ~/fellowship-new/ on the server"
 
 # Clean up
 rm -rf "$TEMP_DIR"
+
+
+

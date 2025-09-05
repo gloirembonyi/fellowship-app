@@ -1420,9 +1420,12 @@ MoH Affiliate Fellowship Program Team`;
                               .replace(/^./, (str) => str.toUpperCase()); // Capitalize the first letter
                           };
 
+                          // Use direct static file serving for uploads
+                          const fileUrl = value.toString();
+
                           return (
                             <a
-                              href={value.toString()}
+                              href={fileUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               key={key}

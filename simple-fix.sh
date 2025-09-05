@@ -33,3 +33,6 @@ ssh -p 5645 gloire@197.243.28.38 "
 "
 
 echo "🎉 Simple fixes completed!"
+
+
+

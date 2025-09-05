@@ -81,8 +81,8 @@ export default function LoginPage() {
             <Image
               src="/Rwanda-coat-of-arms.png"
               alt="Rwanda Coat of Arms"
-              width={20}
-              height={20}
+              width={40}
+              height={40}
               className="mx-auto"
             />
           </div>
