@@ -37,6 +37,9 @@ model Application {
   projectSummary       String
   projectMotivation    String
   cvFileUrl            String?
+  idPassportFileUrl    String?
+  degreeFileUrl        String?
+  canFinanceExpenses   String?
   status               String               @default("pending")
   email                String               @unique
   firstName            String
@@ -49,7 +52,7 @@ model Application {
   rejectionReason      String?
   submittedAt          DateTime             @default(now())
   
-  // Project Funding and Sustainability Information
+  // Project Funding and Sustainability Information (legacy fields)
   estimatedBudget      String?
   fundingSources       String?
   fundingSecured       String?
@@ -59,11 +62,13 @@ model Application {
   fundingInfoRequested Boolean              @default(false)
   fundingInfoSubmitted Boolean              @default(false)
   fundingInfoSubmittedAt DateTime?
+  starred              Boolean              @default(false)
   
   additionalDocuments  AdditionalDocuments[]
 
   @@index([status])
   @@index([createdAt])
+  @@index([starred])
 }
 
 model AdditionalDocuments {

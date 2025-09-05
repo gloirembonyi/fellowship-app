@@ -12,8 +12,21 @@ type Application = {
   nationality: string;
   countryOfResidence: string;
   projectArea: string;
+  educationLevel: string;
+  professionalContext: string;
+  workplace: string;
+  position: string;
   status: "pending" | "approved" | "rejected";
   submittedAt: string;
+  starred: boolean;
+};
+
+type FilterOptions = {
+  countries: string[];
+  nationalities: string[];
+  educationLevels: string[];
+  projectAreas: string[];
+  professionalContexts: string[];
 };
 
 // Avatar component for user initials
@@ -83,6 +96,28 @@ export default function ApplicationsPage() {
   const [allApplications, setAllApplications] = useState<Application[]>([]);
   const [deletingApplicationId, setDeletingApplicationId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  
+  // Advanced filters state
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    country: '',
+    nationality: '',
+    educationLevel: '',
+    projectArea: '',
+    professionalContext: '',
+    dateFrom: '',
+    dateTo: '',
+    starred: '',
+    sortBy: 'submittedAt',
+    sortOrder: 'desc'
+  });
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    countries: [],
+    nationalities: [],
+    educationLevels: [],
+    projectAreas: [],
+    professionalContexts: []
+  });
 
   // Fetch applications with pagination
   useEffect(() => {
@@ -94,6 +129,16 @@ export default function ApplicationsPage() {
           limit: (itemsPerPage ?? 10).toString(),
           status: statusFilter !== "all" ? statusFilter : "",
           search: searchTerm,
+          country: filters.country,
+          nationality: filters.nationality,
+          educationLevel: filters.educationLevel,
+          projectArea: filters.projectArea,
+          professionalContext: filters.professionalContext,
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          starred: filters.starred,
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder,
         });
 
         const response = await fetch(`/api/admin/applications?${queryParams}`, {
@@ -118,7 +163,7 @@ export default function ApplicationsPage() {
     };
 
     fetchApplications();
-  }, [currentPage, itemsPerPage, statusFilter, searchTerm]);
+  }, [currentPage, itemsPerPage, statusFilter, searchTerm, filters]);
 
   // Fetch stats for filter counts
   useEffect(() => {
@@ -154,6 +199,24 @@ export default function ApplicationsPage() {
     };
     
     checkUserRole();
+  }, []);
+
+  // Fetch filter options
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await fetch("/api/admin/applications/filters");
+        const data = await response.json();
+        
+        if (data.success && data.filters) {
+          setFilterOptions(data.filters);
+        }
+      } catch (error) {
+        console.error("Error fetching filter options:", error);
+      }
+    };
+    
+    fetchFilterOptions();
   }, []);
 
   // Delete application function
@@ -617,6 +680,64 @@ We appreciate your cooperation and look forward to reviewing your additional inf
     setCurrentPage(1); // Reset to first page when searching
   };
 
+  // Toggle star status
+  const toggleStar = async (applicationId: string, currentStarred: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/applications/${applicationId}/star`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ starred: !currentStarred }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update star status");
+      }
+
+      // Update the application in the current list
+      setApplications(
+        applications.map((app) => 
+          app.id === applicationId ? { ...app, starred: !currentStarred } : app
+        )
+      );
+
+      const data = await response.json();
+      console.log(data.message);
+    } catch (err) {
+      console.error("Error updating star status:", err);
+      alert("Failed to update star status. Please try again.");
+    }
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (filterName: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setFilters({
+      country: '',
+      nationality: '',
+      educationLevel: '',
+      projectArea: '',
+      professionalContext: '',
+      dateFrom: '',
+      dateTo: '',
+      starred: '',
+      sortBy: 'submittedAt',
+      sortOrder: 'desc'
+    });
+    setStatusFilter('all');
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
+
   // Calculate page numbers to display
   const getPageNumbers = () => {
     const pageNumbers = [];
@@ -654,36 +775,44 @@ We appreciate your cooperation and look forward to reviewing your additional inf
           Application List
         </h2>
 
-        {/* Search */}
-        <form onSubmit={handleSearch} className="flex w-full md:w-auto">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            placeholder="Search by name or email..."
-            className={`rounded-l-lg border-r-0 block w-full px-3 py-2 text-sm border ${
-              darkMode
-                ? "bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-400"
-                : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
-            } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-          />
-          <button
-            type="submit"
-            className={`px-4 py-2 rounded-r-lg text-sm ${
-              darkMode
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-blue-500 hover:bg-blue-600 text-white"
-            } transition-colors duration-200`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
-        </form>
+        {/* Enhanced Search */}
+        <div className="flex w-full md:w-auto">
+          <div className="relative flex-1 md:w-80">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search by name, email, country, workplace..."
+              className={`w-full pl-10 pr-4 py-2 text-sm border rounded-lg ${
+                darkMode
+                  ? "bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-400"
+                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className={`w-4 h-4 ${darkMode ? "text-gray-400" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setCurrentPage(1);
+                }}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <svg className={`w-4 h-4 ${darkMode ? "text-gray-400 hover:text-gray-300" : "text-gray-500 hover:text-gray-700"} transition-colors`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Filters - Compact */}
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1.5 items-center">
         <button
           onClick={() => handleStatusFilterChange("all")}
           className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-all duration-200 ${
@@ -740,7 +869,266 @@ We appreciate your cooperation and look forward to reviewing your additional inf
         >
           Rejected ({stats.rejected})
         </button>
+        
+        {/* Starred Filter */}
+        <button
+          onClick={() => handleFilterChange("starred", filters.starred === "true" ? "" : "true")}
+          className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-all duration-200 flex items-center ${
+            filters.starred === "true"
+              ? darkMode
+                ? "bg-amber-600 text-white shadow-lg"
+                : "bg-amber-500 text-white shadow-lg"
+              : darkMode
+              ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          <svg className="w-4 h-4 mr-1" fill={filters.starred === "true" ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+          </svg>
+          Starred
+        </button>
+
+        {/* Advanced Filters Toggle */}
+        <button
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-all duration-200 flex items-center ${
+            showAdvancedFilters
+              ? darkMode
+                ? "bg-purple-600 text-white shadow-lg"
+                : "bg-purple-500 text-white shadow-lg"
+              : darkMode
+              ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
+          </svg>
+          Advanced Filters
+          <svg className={`w-4 h-4 ml-1 transform transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Clear Filters */}
+        {(Object.values(filters).some(value => value !== '' && value !== 'submittedAt' && value !== 'desc') || statusFilter !== 'all' || searchTerm) && (
+          <button
+            onClick={clearAllFilters}
+            className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-all duration-200 flex items-center ${
+              darkMode
+                ? "bg-red-600 hover:bg-red-700 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white"
+            }`}
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Clear All
+          </button>
+        )}
       </div>
+
+      {/* Advanced Filters Panel */}
+      {showAdvancedFilters && (
+        <div className={`rounded-lg border p-4 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-gray-50 border-gray-200"}`}>
+          <h3 className={`text-lg font-semibold mb-4 ${darkMode ? "text-white" : "text-gray-900"}`}>
+            Advanced Filters
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* Country Filter */}
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                Country
+              </label>
+              <select
+                value={filters.country}
+                onChange={(e) => handleFilterChange("country", e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              >
+                <option value="">All Countries</option>
+                {filterOptions.countries.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Nationality Filter */}
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                Nationality
+              </label>
+              <select
+                value={filters.nationality}
+                onChange={(e) => handleFilterChange("nationality", e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              >
+                <option value="">All Nationalities</option>
+                {filterOptions.nationalities.map(nationality => (
+                  <option key={nationality} value={nationality}>{nationality}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Education Level Filter */}
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                Education Level
+              </label>
+              <select
+                value={filters.educationLevel}
+                onChange={(e) => handleFilterChange("educationLevel", e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              >
+                <option value="">All Education Levels</option>
+                {filterOptions.educationLevels.map(level => (
+                  <option key={level} value={level}>{level}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Project Area Filter */}
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                Project Area
+              </label>
+              <select
+                value={filters.projectArea}
+                onChange={(e) => handleFilterChange("projectArea", e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              >
+                <option value="">All Project Areas</option>
+                {filterOptions.projectAreas.map(area => (
+                  <option key={area} value={area}>{area}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Professional Context Filter */}
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                Professional Context
+              </label>
+              <select
+                value={filters.professionalContext}
+                onChange={(e) => handleFilterChange("professionalContext", e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              >
+                <option value="">All Contexts</option>
+                {filterOptions.professionalContexts.map(context => (
+                  <option key={context} value={context}>{context}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date From */}
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                Date From
+              </label>
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              />
+            </div>
+
+            {/* Date To */}
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                Date To
+              </label>
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => handleFilterChange("dateTo", e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              />
+            </div>
+
+            {/* Sort By */}
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                Sort By
+              </label>
+              <select
+                value={filters.sortBy}
+                onChange={(e) => handleFilterChange("sortBy", e.target.value)}
+                className={`w-full px-3 py-2 text-sm border rounded-lg ${
+                  darkMode
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              >
+                <option value="submittedAt">Submission Date</option>
+                <option value="firstName">First Name</option>
+                <option value="lastName">Last Name</option>
+                <option value="status">Status</option>
+                <option value="nationality">Nationality</option>
+                <option value="countryOfResidence">Country</option>
+                <option value="projectArea">Project Area</option>
+                <option value="educationLevel">Education</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <label className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
+                Sort Order:
+              </label>
+              <button
+                onClick={() => handleFilterChange("sortOrder", filters.sortOrder === "desc" ? "asc" : "desc")}
+                className={`px-3 py-1 text-sm rounded font-medium transition-colors ${
+                  filters.sortOrder === "desc"
+                    ? darkMode
+                      ? "bg-blue-600 text-white"
+                      : "bg-blue-500 text-white"
+                    : darkMode
+                    ? "bg-gray-600 text-gray-300"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                {filters.sortOrder === "desc" ? "↓ Descending" : "↑ Ascending"}
+              </button>
+            </div>
+            
+            <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+              Showing {totalCount} results
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Funding Management Section */}
       {selectedApplications.size > 0 && (
@@ -795,6 +1183,14 @@ We appreciate your cooperation and look forward to reviewing your additional inf
                       darkMode ? "bg-gray-700 border-gray-600" : "bg-white"
                     }`}
                   />
+                </th>
+                <th
+                  scope="col"
+                  className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${
+                    darkMode ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  STAR
                 </th>
                 <th
                   scope="col"
@@ -858,7 +1254,7 @@ We appreciate your cooperation and look forward to reviewing your additional inf
               {loading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className={`px-4 py-8 text-center ${
                       darkMode ? "text-gray-300" : "text-gray-500"
                     }`}
@@ -872,7 +1268,7 @@ We appreciate your cooperation and look forward to reviewing your additional inf
               ) : error ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className={`px-4 py-8 text-center ${
                       darkMode ? "text-red-400" : "text-red-500"
                     }`}
@@ -888,7 +1284,7 @@ We appreciate your cooperation and look forward to reviewing your additional inf
               ) : applications.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className={`px-4 py-8 text-center ${
                       darkMode ? "text-gray-300" : "text-gray-500"
                     }`}
@@ -921,6 +1317,23 @@ We appreciate your cooperation and look forward to reviewing your additional inf
                           darkMode ? "bg-gray-700 border-gray-600" : "bg-white"
                         }`}
                       />
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => toggleStar(application.id, application.starred)}
+                        className={`p-1 rounded transition-colors ${
+                          application.starred
+                            ? "text-amber-500 hover:text-amber-600"
+                            : darkMode
+                            ? "text-gray-400 hover:text-amber-400"
+                            : "text-gray-300 hover:text-amber-500"
+                        }`}
+                        title={application.starred ? "Remove from starred" : "Add to starred"}
+                      >
+                        <svg className="w-5 h-5" fill={application.starred ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                      </button>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center">

@@ -63,15 +63,12 @@ type ApplicationFormData = {
   projectMotivation: string;
 
   // Project Funding and Sustainability
-  estimatedBudget: string;
-  fundingSources: string;
-  fundingSecured: string;
-  fundingProof?: FileList;
-  fundingPlan?: FileList;
-  sustainabilityPlan: string;
+  canFinanceExpenses: string;
 
-  // CV/Resume
+  // Required Documents
   cvFile?: FileList;
+  idPassportFile?: FileList;
+  degreeFile?: FileList;
 };
 
 function ApplicationForm({
@@ -139,10 +136,10 @@ function ApplicationForm({
         { field: "projectArea", label: "Project Area" },
         { field: "projectSummary", label: "Project Summary" },
         { field: "projectMotivation", label: "Project Motivation" },
-        { field: "estimatedBudget", label: "Estimated Budget" },
-        { field: "fundingSources", label: "Funding Sources" },
-        { field: "fundingSecured", label: "Funding Secured" },
-        { field: "sustainabilityPlan", label: "Sustainability Plan" },
+        { field: "canFinanceExpenses", label: "Can Finance Expenses" },
+        { field: "cvFile", label: "CV/Resume" },
+        { field: "idPassportFile", label: "ID/Passport" },
+        { field: "degreeFile", label: "Latest Degree" },
       ];
 
       const missing: string[] = [];
@@ -182,15 +179,20 @@ function ApplicationForm({
             return isValid;
           }
 
-          // Special validation for funding files
-          if (field === "fundingSecured" && formValues.fundingSecured === "Yes") {
-            const isValid = formValues.fundingProof && formValues.fundingProof.length > 0;
-            if (!isValid) missing.push("Proof of Funding");
+          // Special validation for file uploads
+          if (field === "cvFile") {
+            const isValid = formValues.cvFile && formValues.cvFile.length > 0;
+            if (!isValid) missing.push("CV/Resume");
             return isValid;
           }
-          if (field === "fundingSecured" && formValues.fundingSecured === "No") {
-            const isValid = formValues.fundingPlan && formValues.fundingPlan.length > 0;
-            if (!isValid) missing.push("Funding Plan");
+          if (field === "idPassportFile") {
+            const isValid = formValues.idPassportFile && formValues.idPassportFile.length > 0;
+            if (!isValid) missing.push("ID/Passport");
+            return isValid;
+          }
+          if (field === "degreeFile") {
+            const isValid = formValues.degreeFile && formValues.degreeFile.length > 0;
+            if (!isValid) missing.push("Latest Degree");
             return isValid;
           }
 
@@ -233,61 +235,63 @@ function ApplicationForm({
           }
         } catch (error) {
           console.error("Error uploading CV:", error);
-          setError("Failed to upload CV file. Please try again.");
+          setSubmitError("Failed to upload CV file. Please try again.");
           return;
         }
       }
 
-      let fundingProofUrl = "";
-      if (formValues.fundingProof && formValues.fundingProof.length > 0) {
-        const fundingProofFile = formValues.fundingProof[0];
-        const fundingProofFormData = new FormData();
-        fundingProofFormData.append('file', fundingProofFile);
-        fundingProofFormData.append('documentType', 'funding-proof');
+      // Upload ID/Passport file
+      let idPassportFileUrl = "";
+      if (formValues.idPassportFile && formValues.idPassportFile.length > 0) {
+        const idPassportFile = formValues.idPassportFile[0];
+        const idPassportFormData = new FormData();
+        idPassportFormData.append('file', idPassportFile);
+        idPassportFormData.append('documentType', 'id-passport');
         
         try {
-          const fundingProofResponse = await fetch('/api/upload', {
+          const idPassportResponse = await fetch('/api/upload', {
             method: 'POST',
-            body: fundingProofFormData,
+            body: idPassportFormData,
           });
           
-          if (fundingProofResponse.ok) {
-            const fundingProofResult = await fundingProofResponse.json();
-            fundingProofUrl = fundingProofResult.fileUrl;
-            console.log("Funding proof uploaded successfully:", fundingProofUrl);
+          if (idPassportResponse.ok) {
+            const idPassportResult = await idPassportResponse.json();
+            idPassportFileUrl = idPassportResult.fileUrl;
+            console.log("ID/Passport file uploaded successfully:", idPassportFileUrl);
           } else {
-            throw new Error('Failed to upload funding proof');
+            throw new Error('Failed to upload ID/Passport file');
           }
         } catch (error) {
-          console.error("Error uploading funding proof:", error);
-          setError("Failed to upload funding proof file. Please try again.");
+          console.error("Error uploading ID/Passport:", error);
+          setSubmitError("Failed to upload ID/Passport file. Please try again.");
           return;
         }
       }
 
-      let fundingPlanUrl = "";
-      if (formValues.fundingPlan && formValues.fundingPlan.length > 0) {
-        const fundingPlanFile = formValues.fundingPlan[0];
-        const fundingPlanFormData = new FormData();
-        fundingPlanFormData.append('file', fundingPlanFile);
-        fundingPlanFormData.append('documentType', 'funding-plan');
+      // Upload Degree file
+      let degreeFileUrl = "";
+      if (formValues.degreeFile && formValues.degreeFile.length > 0) {
+        const degreeFile = formValues.degreeFile[0];
+        const degreeFormData = new FormData();
+        degreeFormData.append('file', degreeFile);
+        degreeFormData.append('documentType', 'degree');
         
         try {
-          const fundingPlanResponse = await fetch('/api/upload', {
+          const degreeResponse = await fetch('/api/upload', {
             method: 'POST',
-            body: fundingPlanFormData,
+            body: degreeFormData,
           });
           
-          if (fundingPlanResponse.ok) {
-            const fundingPlanResult = await fundingPlanResponse.json();
-            fundingPlanUrl = fundingPlanResult.fileUrl;
-            console.log("Funding plan uploaded successfully:", fundingPlanUrl);
+          if (degreeResponse.ok) {
+            const degreeResult = await degreeResponse.json();
+            degreeFileUrl = degreeResult.fileUrl;
+            console.log("Degree file uploaded successfully:", degreeFileUrl);
           } else {
-            throw new Error('Failed to upload funding plan');
+            throw new Error('Failed to upload degree file');
           }
         } catch (error) {
-          console.error("Error uploading funding plan:", error);
-          setError("Failed to upload funding plan file. Please try again.");
+          console.error("Error uploading degree:", error);
+          setSubmitError("Failed to upload degree file. Please try again.");
           return;
         }
       }
@@ -318,13 +322,10 @@ function ApplicationForm({
         otherProjectArea: formValues.otherProjectArea || null,
         projectSummary: formValues.projectSummary,
         projectMotivation: formValues.projectMotivation,
-        estimatedBudget: formValues.estimatedBudget,
-        fundingSources: formValues.fundingSources,
-        fundingSecured: formValues.fundingSecured,
-        fundingProofUrl: fundingProofUrl || null,
-        fundingPlanUrl: fundingPlanUrl || null,
-        sustainabilityPlan: formValues.sustainabilityPlan,
+        canFinanceExpenses: formValues.canFinanceExpenses,
         cvFileUrl,
+        idPassportFileUrl,
+        degreeFileUrl,
         status: "pending",
       };
 
@@ -491,10 +492,7 @@ function ApplicationForm({
           otherProjectArea: data.otherProjectArea || null,
           projectSummary: data.projectSummary,
           projectMotivation: data.projectMotivation,
-          estimatedBudget: data.estimatedBudget,
-          fundingSources: data.fundingSources,
-          fundingSecured: data.fundingSecured,
-          sustainabilityPlan: data.sustainabilityPlan,
+          canFinanceExpenses: data.canFinanceExpenses,
           status: "pending",
         };
 
@@ -832,87 +830,18 @@ function ApplicationForm({
             </div>
 
             <div>
-              <p className={labelClassName}>Estimated Budget</p>
+              <p className={labelClassName}>Can Finance Expenses</p>
               <div
                 className={`${valueClassName} mt-1 p-4 rounded-md ${
                   darkMode ? "bg-gray-700/50" : "bg-gray-50"
                 }`}
               >
-                {formValues.estimatedBudget}
+                {formValues.canFinanceExpenses}
               </div>
             </div>
 
             <div>
-              <p className={labelClassName}>Funding Sources</p>
-              <div
-                className={`${valueClassName} mt-1 p-4 rounded-md ${
-                  darkMode ? "bg-gray-700/50" : "bg-gray-50"
-                }`}
-              >
-                {formValues.fundingSources}
-              </div>
-            </div>
-
-            <div>
-              <p className={labelClassName}>Funding Secured</p>
-              <div
-                className={`${valueClassName} mt-1 p-4 rounded-md ${
-                  darkMode ? "bg-gray-700/50" : "bg-gray-50"
-                }`}
-              >
-                {formValues.fundingSecured}
-              </div>
-            </div>
-
-            <div>
-              <p className={labelClassName}>Sustainability Plan</p>
-              <div
-                className={`${valueClassName} mt-1 p-4 rounded-md ${
-                  darkMode ? "bg-gray-700/50" : "bg-gray-50"
-                }`}
-              >
-                {formValues.sustainabilityPlan}
-              </div>
-            </div>
-
-            {formValues.fundingSecured === "Yes" && formValues.fundingProof && formValues.fundingProof.length > 0 && (
-              <div>
-                <p className={labelClassName}>Proof of Funding</p>
-                <div
-                  className={`${valueClassName} mt-1 p-4 rounded-md ${
-                    darkMode ? "bg-gray-700/50" : "bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {formValues.fundingProof[0].name}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {formValues.fundingSecured === "No" && formValues.fundingPlan && formValues.fundingPlan.length > 0 && (
-              <div>
-                <p className={labelClassName}>Funding Plan</p>
-                <div
-                  className={`${valueClassName} mt-1 p-4 rounded-md ${
-                    darkMode ? "bg-gray-700/50" : "bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {formValues.fundingPlan[0].name}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <p className={labelClassName}>CV/Resume</p>
+              <p className={labelClassName}>CV</p>
               <div
                 className={`mt-1 flex items-center ${
                   darkMode ? "text-blue-300" : "text-blue-600"
@@ -936,6 +865,76 @@ function ApplicationForm({
                     </svg>
                     <span className={valueClassName}>
                       {formValues.cvFile[0].name}
+                    </span>
+                  </>
+                ) : (
+                  <span className={`${valueClassName} italic`}>
+                    No file uploaded
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className={labelClassName}>ID/Passport</p>
+              <div
+                className={`mt-1 flex items-center ${
+                  darkMode ? "text-blue-300" : "text-blue-600"
+                }`}
+              >
+                {formValues.idPassportFile && formValues.idPassportFile.length > 0 ? (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <span className={valueClassName}>
+                      {formValues.idPassportFile[0].name}
+                    </span>
+                  </>
+                ) : (
+                  <span className={`${valueClassName} italic`}>
+                    No file uploaded
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className={labelClassName}>Latest Degree</p>
+              <div
+                className={`mt-1 flex items-center ${
+                  darkMode ? "text-blue-300" : "text-blue-600"
+                }`}
+              >
+                {formValues.degreeFile && formValues.degreeFile.length > 0 ? (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <span className={valueClassName}>
+                      {formValues.degreeFile[0].name}
                     </span>
                   </>
                 ) : (
@@ -1304,16 +1303,29 @@ function ApplicationForm({
             <input
               type="tel"
               id="phone"
-              className={inputClassName("phone")}
+              className={`w-full border ${
+                errors.phone
+                  ? darkMode
+                    ? "border-red-500 bg-red-900/20 text-red-100 placeholder-red-300"
+                    : "border-red-500 bg-red-50 text-red-900 placeholder-red-500"
+                  : darkMode
+                  ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400"
+                  : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+              } rounded-lg px-4 py-3 focus:outline-none focus:ring-2 ${
+                darkMode
+                  ? "focus:ring-blue-500 focus:border-blue-500"
+                  : "focus:ring-blue-500 focus:border-blue-500"
+              } transition-all duration-200 text-sm shadow-sm hover:shadow-md`}
               placeholder="Phone number"
               value={phoneNumber}
               onChange={handlePhoneChange}
+              style={{ color: darkMode ? '#ffffff' : '#111827' }}
             />
           </div>
         </div>
         {formattedPhone && (
-          <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-md border border-green-200 dark:border-green-800">
-            <p className="text-xs text-green-700 dark:text-green-300 flex items-center">
+          <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/20 rounded-md border border-gray-200 dark:border-gray-800">
+            <p className="text-xs text-blue-900 dark:text-blue-300 flex items-center">
               <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
@@ -1505,10 +1517,10 @@ function ApplicationForm({
         { field: "projectArea", label: "Project Area" },
         { field: "projectSummary", label: "Project Summary" },
         { field: "projectMotivation", label: "Project Motivation" },
-        { field: "estimatedBudget", label: "Estimated Budget" },
-        { field: "fundingSources", label: "Funding Sources" },
-        { field: "fundingSecured", label: "Funding Secured" },
-        { field: "sustainabilityPlan", label: "Sustainability Plan" },
+        { field: "canFinanceExpenses", label: "Can Finance Expenses" },
+        { field: "cvFile", label: "CV/Resume" },
+        { field: "idPassportFile", label: "ID/Passport" },
+        { field: "degreeFile", label: "Latest Degree" },
       ],
     };
 
@@ -2372,62 +2384,18 @@ function ApplicationForm({
               )}
             </div>
 
-            {/* Project Funding and Sustainability Section */}
+            {/* Funding Section */}
             <div className="mb-6">
               <h3 className={`text-lg font-semibold mb-4 ${
                 darkMode ? "text-white" : "text-gray-900"
               }`}>
-                6. Project funding source and sustainability:
+                Funding:
               </h3>
               
               <div className="mb-4">
-                <label className={labelClassName} htmlFor="estimatedBudget">
-                  What is the estimated budget for the project?{" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="estimatedBudget"
-                  className={inputClassName("estimatedBudget")}
-                  placeholder="e.g., $50,000 USD or 50,000,000 RWF"
-                  {...register("estimatedBudget", {
-                    required: "Estimated budget is required",
-                  })}
-                />
-                {errors.estimatedBudget && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.estimatedBudget.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label className={labelClassName} htmlFor="fundingSources">
-                  What are the potential or secured sources of funding?{" "}
-                  <span className="text-red-500">*</span>
-                  <span className="text-gray-500 text-xs ml-1">
-                    (e.g., grants, institutional support, personal contributions, partnerships)
-                  </span>
-                </label>
-                <textarea
-                  id="fundingSources"
-                  rows={3}
-                  className={inputClassName("fundingSources")}
-                  placeholder="Describe your funding sources in detail"
-                  {...register("fundingSources", {
-                    required: "Funding sources are required",
-                  })}
-                ></textarea>
-                {errors.fundingSources && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.fundingSources.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
                 <label className={labelClassName}>
-                  Is funding secured? <span className="text-red-500">*</span>
+                  Are you able to finance your own living and logistical expenses during the Affiliate Fellowship Program?{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <label className={radioLabelClassName}>
@@ -2435,8 +2403,8 @@ function ApplicationForm({
                       type="radio"
                       className={radioClassName}
                       value="Yes"
-                      {...register("fundingSecured", {
-                        required: "Please specify if funding is secured",
+                      {...register("canFinanceExpenses", {
+                        required: "Please specify if you can finance your expenses",
                       })}
                     />
                     <span className={radioTextClassName}>Yes</span>
@@ -2446,193 +2414,244 @@ function ApplicationForm({
                       type="radio"
                       className={radioClassName}
                       value="No"
-                      {...register("fundingSecured", {
-                        required: "Please specify if funding is secured",
+                      {...register("canFinanceExpenses", {
+                        required: "Please specify if you can finance your expenses",
                       })}
                     />
                     <span className={radioTextClassName}>No</span>
                   </label>
                 </div>
-                {errors.fundingSecured && (
+                {errors.canFinanceExpenses && (
                   <p className="text-red-500 text-xs mt-1">
-                    {errors.fundingSecured.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Conditional file upload based on funding status */}
-              {watch("fundingSecured") === "Yes" && (
-                <div className="mb-4">
-                  <label className={labelClassName} htmlFor="fundingProof">
-                    Proof of Funding <span className="text-red-500">*</span>
-                    <span className="text-gray-500 text-xs ml-1">
-                      (PDF, DOC, or DOCX format, max 10MB)
-                    </span>
-                  </label>
-                  <div className="mt-1 flex items-center">
-                    <label
-                      htmlFor="fundingProof"
-                      className={`flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer`}
-                    >
-                      <svg
-                        className="h-5 w-5 text-gray-400 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                        ></path>
-                      </svg>
-                      Choose funding proof file
-                    </label>
-                    <input
-                      id="fundingProof"
-                      type="file"
-                      className="sr-only"
-                      accept=".pdf,.doc,.docx"
-                      {...register("fundingProof", {
-                        required: watch("fundingSecured") === "Yes" ? "Proof of funding is required when funding is secured" : false,
-                      })}
-                    />
-                  </div>
-                  {errors.fundingProof && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.fundingProof.message}
-                    </p>
-                  )}
-                  <p className="mt-2 text-xs text-gray-500">
-                    Upload documents such as grant letters, funding agreements, or other proof of secured funding.
-                  </p>
-                </div>
-              )}
-
-              {watch("fundingSecured") === "No" && (
-                <div className="mb-4">
-                  <label className={labelClassName} htmlFor="fundingPlan">
-                    Plan to Obtain Financial Support <span className="text-red-500">*</span>
-                    <span className="text-gray-500 text-xs ml-1">
-                      (PDF, DOC, or DOCX format, max 10MB)
-                    </span>
-                  </label>
-                  <div className="mt-1 flex items-center">
-                    <label
-                      htmlFor="fundingPlan"
-                      className={`flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer`}
-                    >
-                      <svg
-                        className="h-5 w-5 text-gray-400 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                        ></path>
-                      </svg>
-                      Choose funding plan file
-                    </label>
-                    <input
-                      id="fundingPlan"
-                      type="file"
-                      className="sr-only"
-                      accept=".pdf,.doc,.docx"
-                      {...register("fundingPlan", {
-                        required: watch("fundingSecured") === "No" ? "Funding plan is required when funding is not secured" : false,
-                      })}
-                    />
-                  </div>
-                  {errors.fundingPlan && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.fundingPlan.message}
-                    </p>
-                  )}
-                  <p className="mt-2 text-xs text-gray-500">
-                    Upload your detailed plan for obtaining financial support, including potential funding sources and strategies.
-                  </p>
-                </div>
-              )}
-
-              <div className="mb-4">
-                <label className={labelClassName} htmlFor="sustainabilityPlan">
-                  How will the project be sustained beyond the fellowship period?{" "}
-                  <span className="text-red-500">*</span>
-                  <span className="text-gray-500 text-xs ml-1">
-                    (e.g., additional funding strategies, partnerships, integration into existing programs)
-                  </span>
-                </label>
-                <textarea
-                  id="sustainabilityPlan"
-                  rows={4}
-                  className={inputClassName("sustainabilityPlan")}
-                  placeholder="Describe your sustainability plan in detail"
-                  {...register("sustainabilityPlan", {
-                    required: "Sustainability plan is required",
-                  })}
-                ></textarea>
-                {errors.sustainabilityPlan && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.sustainabilityPlan.message}
+                    {errors.canFinanceExpenses.message}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className={labelClassName} htmlFor="cvFile">
-                CV/Resume <span className="text-red-500">*</span>
-                <span className="text-gray-500 text-xs ml-1">
-                  (PDF format, max 2MB)
-                </span>
-              </label>
-              <div className="mt-1 flex items-center">
-                <label
-                  htmlFor="cvFile"
-                  className={`flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors cursor-pointer`}
-                >
-                  <svg
-                    className="h-5 w-5 text-gray-400 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    ></path>
-                  </svg>
-                  Choose file
+            {/* Required Documents Section */}
+            <div className="mb-6">
+              <h3 className={`text-lg font-semibold mb-4 ${
+                darkMode ? "text-white" : "text-gray-900"
+              }`}>
+                Required Documents:
+              </h3>
+              
+              <div className="mb-4">
+                <label className={labelClassName} htmlFor="cvFile">
+                  CV <span className="text-red-500">*</span>
+                  <span className="text-gray-500 text-xs ml-1">
+                    (PDF format, max 2MB)
+                  </span>
                 </label>
-                <input
-                  id="cvFile"
-                  type="file"
-                  className="sr-only"
-                  accept=".pdf"
-                  {...register("cvFile", {
-                    required: "CV/Resume is required",
-                  })}
-                />
+                <div className="mt-1">
+                  <label
+                    htmlFor="cvFile"
+                    className={`flex items-center justify-center w-full px-4 py-2 border-2 border-dashed rounded-md transition-colors cursor-pointer ${
+                      (() => {
+                        const cvFile = watch("cvFile");
+                        return cvFile && cvFile.length > 0 && cvFile[0]
+                          ? "border-green-300 bg-green-50 text-green-700"
+                          : "border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-700";
+                      })()
+                    }`}
+                  >
+                    {(() => {
+                      const cvFile = watch("cvFile");
+                      const hasFile = cvFile && cvFile.length > 0 && cvFile[0];
+                      return hasFile ? (
+                        <div className="flex items-center">
+                          <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="text-sm">
+                            <span className="font-medium">{cvFile[0].name}</span>
+                            <span className="text-gray-500 ml-2">
+                              ({(cvFile[0].size / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                      <div className="flex items-center">
+                        <svg
+                          className="h-5 w-5 text-gray-400 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                          ></path>
+                        </svg>
+                        <span className="text-sm font-medium">Choose CV file</span>
+                      </div>
+                      );
+                    })()}
+                  </label>
+                  <input
+                    id="cvFile"
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf"
+                    {...register("cvFile", {
+                      required: "CV is required",
+                    })}
+                  />
+                </div>
+                {errors.cvFile && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.cvFile.message}
+                  </p>
+                )}
               </div>
-              {errors.cvFile && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.cvFile.message}
-                </p>
-              )}
-              <p className="mt-2 text-xs text-gray-500">
-                Your CV/Resume should include your education, work experience,
-                publications, and any relevant achievements.
-              </p>
+
+              <div className="mb-4">
+                <label className={labelClassName} htmlFor="idPassportFile">
+                  ID/Passport <span className="text-red-500">*</span>
+                  <span className="text-gray-500 text-xs ml-1">
+                    (PDF, JPG, or PNG format, max 2MB)
+                  </span>
+                </label>
+                <div className="mt-1">
+                  <label
+                    htmlFor="idPassportFile"
+                    className={`flex items-center justify-center w-full px-4 py-2 border-2 border-dashed rounded-md transition-colors cursor-pointer ${
+                      (() => {
+                        const idPassportFile = watch("idPassportFile");
+                        return idPassportFile && idPassportFile.length > 0 && idPassportFile[0]
+                          ? "border-green-300 bg-green-50 text-green-700"
+                          : "border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-700";
+                      })()
+                    }`}
+                  >
+                    {(() => {
+                      const idPassportFile = watch("idPassportFile");
+                      const hasFile = idPassportFile && idPassportFile.length > 0 && idPassportFile[0];
+                      return hasFile ? (
+                        <div className="flex items-center">
+                          <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="text-sm">
+                            <span className="font-medium">{idPassportFile[0].name}</span>
+                            <span className="text-gray-500 ml-2">
+                              ({(idPassportFile[0].size / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <svg
+                            className="h-5 w-5 text-gray-400 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            ></path>
+                          </svg>
+                          <span className="text-sm font-medium">Choose ID/Passport file</span>
+                        </div>
+                      );
+                    })()}
+                  </label>
+                  <input
+                    id="idPassportFile"
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    {...register("idPassportFile", {
+                      required: "ID/Passport is required",
+                    })}
+                  />
+                </div>
+                {errors.idPassportFile && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.idPassportFile.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label className={labelClassName} htmlFor="degreeFile">
+                  Latest Degree <span className="text-red-500">*</span>
+                  <span className="text-gray-500 text-xs ml-1">
+                    (PDF format, max 2MB)
+                  </span>
+                </label>
+                <div className="mt-1">
+                  <label
+                    htmlFor="degreeFile"
+                    className={`flex items-center justify-center w-full px-4 py-2 border-2 border-dashed rounded-md transition-colors cursor-pointer ${
+                      (() => {
+                        const degreeFile = watch("degreeFile");
+                        return degreeFile && degreeFile.length > 0 && degreeFile[0]
+                          ? "border-green-300 bg-green-50 text-green-700"
+                          : "border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-700";
+                      })()
+                    }`}
+                  >
+                    {(() => {
+                      const degreeFile = watch("degreeFile");
+                      const hasFile = degreeFile && degreeFile.length > 0 && degreeFile[0];
+                      return hasFile ? (
+                        <div className="flex items-center">
+                          <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="text-sm">
+                            <span className="font-medium">{degreeFile[0].name}</span>
+                            <span className="text-gray-500 ml-2">
+                              ({(degreeFile[0].size / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <svg
+                            className="h-5 w-5 text-gray-400 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            ></path>
+                          </svg>
+                          <span className="text-sm font-medium">Choose degree file</span>
+                        </div>
+                      );
+                    })()}
+                  </label>
+                  <input
+                    id="degreeFile"
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf"
+                    {...register("degreeFile", {
+                      required: "Latest degree is required",
+                    })}
+                  />
+                </div>
+                {errors.degreeFile && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.degreeFile.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">

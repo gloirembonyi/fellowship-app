@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     
     // Remove any fields that shouldn't be stored or are not in the schema
-    const { cvFile, ...cleanData } = data;
+    const { cvFile, idPassportFile, degreeFile, ...cleanData } = data;
     
     // Create the application in the database
     const application = await prisma.application.create({

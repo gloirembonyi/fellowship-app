@@ -19,8 +19,9 @@ interface Application {
   projectArea: string;
   status: "pending" | "approved" | "rejected";
   submittedAt: string;
-  priority: "high" | "medium" | "low";
-  progress: number;
+  starred?: boolean;
+  priority?: "high" | "medium" | "low";
+  progress?: number;
 }
 
 // Icons
@@ -179,6 +180,7 @@ export default function AdminDashboard() {
     rejectedApplications: 0
   });
   const [applications, setApplications] = useState<Application[]>([]);
+  const [starredApplications, setStarredApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [monthlyData, setMonthlyData] = useState({
@@ -239,7 +241,8 @@ export default function AdminDashboard() {
           email: app.email,
           projectArea: app.projectArea,
           status: app.status,
-          submittedAt: app.submittedAt
+          submittedAt: app.submittedAt,
+          starred: app.starred || false
         }));
         setApplications(formattedApplications);
         
@@ -250,6 +253,24 @@ export default function AdminDashboard() {
           itemsPerPage: limit,
           totalItems: applicationsData.pagination?.totalCount || 0
         });
+      }
+
+      // Fetch starred applications
+      const starredResponse = await fetch(`/api/admin/applications?starred=true&limit=5`);
+      const starredData = await starredResponse.json();
+      
+      if (starredResponse.ok && starredData.applications) {
+        const formattedStarred = starredData.applications.map((app: any) => ({
+          id: app.id,
+          firstName: app.firstName,
+          lastName: app.lastName,
+          email: app.email,
+          projectArea: app.projectArea,
+          status: app.status,
+          submittedAt: app.submittedAt,
+          starred: true
+        }));
+        setStarredApplications(formattedStarred);
       }
 
       // Fetch monthly data
@@ -596,6 +617,97 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Starred Applications - Compact */}
+      {starredApplications.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
+          <div className="p-3 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-gray-900">Starred Applications</h3>
+                <span className="text-sm text-gray-500">({starredApplications.length})</span>
+              </div>
+              <Link
+                href="/admin/applications?starred=true"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                View All →
+              </Link>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-amber-50">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                    APPLICANT
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                    PROJECT
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                    STATUS
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                    ACTIONS
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {starredApplications.map((application) => (
+                  <tr key={application.id} className="hover:bg-amber-50">
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                          <span className="text-xs font-medium text-white">
+                            {application.firstName.charAt(0)}{application.lastName.charAt(0)}
+                          </span>
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900">
+                            {application.firstName} {application.lastName}
+                          </div>
+                          <div className="text-xs text-gray-500">{application.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 max-w-xs">
+                        <div className="truncate" title={application.projectArea}>
+                          {application.projectArea}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        application.status === "approved" 
+                          ? "bg-green-100 text-green-800"
+                          : application.status === "rejected"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <Link
+                        href={`/admin/applications/${application.id}`}
+                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+                      >
+                        View Details
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Applications Table - Compact */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">

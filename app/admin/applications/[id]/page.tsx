@@ -51,13 +51,19 @@ type Application = {
   fundingInfoSubmitted?: boolean;
   fundingInfoSubmittedAt?: string;
 
-  // CV/Resume
+  // Documents
   cvFileUrl?: string;
+  idPassportFileUrl?: string;
+  degreeFileUrl?: string;
+  
+  // Funding
+  canFinanceExpenses?: string;
 
   // Status and timestamps
   status: "pending" | "approved" | "rejected" | "received";
   submittedAt: string;
   updatedAt: string;
+  starred?: boolean;
 };
 
 // Modern Confirmation Modal Component
@@ -482,6 +488,41 @@ MoH Affiliate Fellowship Program Team`;
     }
   };
 
+  // Toggle star status
+  const toggleStar = async () => {
+    try {
+      const response = await fetch(`/api/admin/applications/${id}/star`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ starred: !application?.starred }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update star status");
+      }
+
+      // Update the application in state
+      if (application) {
+        setApplication({ ...application, starred: !application.starred });
+      }
+
+      setToast({
+        show: true,
+        message: application?.starred ? "Application unstarred" : "Application starred",
+        type: "success",
+      });
+    } catch (err) {
+      console.error("Error updating star status:", err);
+      setToast({
+        show: true,
+        message: "Failed to update star status. Please try again.",
+        type: "error",
+      });
+    }
+  };
+
   const closeToast = () => {
     setToast({ ...toast, show: false });
   };
@@ -878,6 +919,26 @@ MoH Affiliate Fellowship Program Team`;
                 </svg>
               )}
               Reject Application
+            </button>
+            
+            {/* Star Button */}
+            <button
+              onClick={toggleStar}
+              className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150 flex items-center ${
+                application.starred
+                  ? darkMode
+                    ? "bg-amber-600 text-white hover:bg-amber-500"
+                    : "bg-amber-500 text-white hover:bg-amber-600"
+                  : darkMode
+                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+              }`}
+              title={application.starred ? "Remove from starred" : "Add to starred"}
+            >
+              <svg className="w-4 h-4 mr-2" fill={application.starred ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+              {application.starred ? "Unstar" : "Star"} Application
             </button>
           </div>
 
@@ -1276,37 +1337,114 @@ MoH Affiliate Fellowship Program Team`;
                 </div>
               )}
 
-              {application.cvFileUrl && (
+              {/* Required Documents Section */}
+              <div
+                className={`p-6 rounded-xl ${
+                  darkMode ? "bg-gray-700/50" : "bg-gray-50"
+                }`}
+              >
+                <SectionTitle>Required Documents</SectionTitle>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* CV Document */}
+                  <div className={`p-4 rounded-lg border ${darkMode ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"}`}>
+                    <h4 className={`font-medium mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                      CV/Resume
+                    </h4>
+                    {application.cvFileUrl ? (
+                      <a
+                        href={application.cvFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                          darkMode
+                            ? "bg-blue-700 text-white hover:bg-blue-600"
+                            : "bg-blue-600 text-white hover:bg-blue-700"
+                        } transition-colors duration-150`}
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        Download CV
+                      </a>
+                    ) : (
+                      <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                        Not uploaded
+                      </p>
+                    )}
+                  </div>
+
+                  {/* ID/Passport Document */}
+                  <div className={`p-4 rounded-lg border ${darkMode ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"}`}>
+                    <h4 className={`font-medium mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                      ID/Passport
+                    </h4>
+                    {application.idPassportFileUrl ? (
+                      <a
+                        href={application.idPassportFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                          darkMode
+                            ? "bg-green-700 text-white hover:bg-green-600"
+                            : "bg-green-600 text-white hover:bg-green-700"
+                        } transition-colors duration-150`}
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        View ID/Passport
+                      </a>
+                    ) : (
+                      <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                        Not uploaded
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Degree Document */}
+                  <div className={`p-4 rounded-lg border ${darkMode ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"}`}>
+                    <h4 className={`font-medium mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>
+                      Latest Degree
+                    </h4>
+                    {application.degreeFileUrl ? (
+                      <a
+                        href={application.degreeFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                          darkMode
+                            ? "bg-purple-700 text-white hover:bg-purple-600"
+                            : "bg-purple-600 text-white hover:bg-purple-700"
+                        } transition-colors duration-150`}
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        View Degree
+                      </a>
+                    ) : (
+                      <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                        Not uploaded
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Funding Information */}
+              {application.canFinanceExpenses && (
                 <div
                   className={`p-6 rounded-xl ${
                     darkMode ? "bg-gray-700/50" : "bg-gray-50"
                   }`}
                 >
-                  <SectionTitle>CV/Resume</SectionTitle>
-                  <a
-                    href={application.cvFileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm ${
-                      darkMode
-                        ? "bg-blue-700 text-white hover:bg-blue-600"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                    } transition-colors duration-150`}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 mr-2"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Download CV/Resume
-                  </a>
+                  <SectionTitle>Funding</SectionTitle>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InfoRow
+                      label="Can Finance Own Expenses"
+                      value={application.canFinanceExpenses}
+                    />
+                  </div>
                 </div>
               )}
             </>
